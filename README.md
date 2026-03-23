@@ -173,4 +173,4 @@ The model achieves:
 
 ---
 
-**Note**: This project uses the IMS bearing dataset for research purposes. Ensure proper citation when using this work.
+**Note**: This project uses the IMS bearing dataset for research purposes. Ensure proper citation when using this work. Thank you. 
