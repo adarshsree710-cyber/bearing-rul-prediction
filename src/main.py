@@ -4,6 +4,7 @@ Main script for Bearing RUL Prediction using CNN
 
 import numpy as np
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 from data_loader import load_bearing_data, create_dataset, calculate_time_intervals
 from preprocessing import normalize_data, scale_rul_labels, split_data, augment_data, shuffle_data
@@ -14,19 +15,23 @@ from predict import evaluate_model, convert_predictions_to_hours, plot_predictio
 def main():
     """Main training and evaluation pipeline"""
 
+    project_root = Path(__file__).resolve().parent.parent
+
     # Configuration
-    DATA_PATH = "../data/ims/1st_test"
+    DATA_PATH = project_root / "data" / "ims" / "1st_test"
     WINDOW_SIZE = 2048
     STRIDE = 512
     TEST_SIZE = 0.2
     EPOCHS = 50
     BATCH_SIZE = 64
-    MODEL_SAVE_PATH = "../models/cnn_rul_model.h5"
+    NUM_AUGMENTATIONS = 1
+    MODEL_SAVE_PATH = project_root / "models" / "cnn_rul_model.keras"
 
     total_steps = 12
     print(f"Pipeline started. Total steps: {total_steps}")
+    print(f"Project root: {project_root}")
     print("Loading bearing data...")
-    signals, files = load_bearing_data(DATA_PATH)
+    signals, files = load_bearing_data(str(DATA_PATH))
 
     print(f"Step 1/{total_steps} complete: bearing data loaded")
     print("Creating dataset...")
@@ -48,11 +53,15 @@ def main():
 
     print(f"Step 5/{total_steps} complete: labels scaled")
     print("Shuffling training data...")
-    X_train, y_train = shuffle_data(X_train, y_train)
+    X_train, y_train_scaled = shuffle_data(X_train, y_train_scaled)
 
     print(f"Step 6/{total_steps} complete: training data shuffled")
     print("Augmenting training data...")
-    X_train_aug, y_train_aug = augment_data(X_train, y_train, num_augmentations=2)
+    X_train_aug, y_train_aug = augment_data(
+        X_train,
+        y_train_scaled,
+        num_augmentations=NUM_AUGMENTATIONS
+    )
     print(f"Augmented dataset size: {X_train_aug.shape[0]} (from {X_train.shape[0]})")
 
     print(f"Step 7/{total_steps} complete: training data augmented")
@@ -66,7 +75,15 @@ def main():
 
     print(f"Step 9/{total_steps} complete: gpu check complete")
     print("Training model...")
-    history = train_model(model, X_train_aug, y_train_aug, X_test, y_test, EPOCHS, BATCH_SIZE)
+    history = train_model(
+        model,
+        X_train_aug,
+        y_train_aug,
+        X_test,
+        y_test_scaled,
+        EPOCHS,
+        BATCH_SIZE
+    )
 
     print(f"Step 10/{total_steps} complete: model trained")
     print("Analyzing overfitting...")
@@ -98,7 +115,8 @@ def main():
 
     print(f"Saving model to {MODEL_SAVE_PATH}...")
     from predict import save_model
-    save_model(model, MODEL_SAVE_PATH)
+    MODEL_SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    save_model(model, str(MODEL_SAVE_PATH))
 
     print(f"Step 12/{total_steps} complete: model saved")
     print("Training complete!")

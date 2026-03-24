@@ -14,7 +14,10 @@ def normalize_data(X):
         np.array: Normalized data
     """
     print(f"Normalizing {len(X)} samples...")
-    return (X - np.mean(X)) / np.std(X)
+    X = X.astype(np.float32, copy=False)
+    mean = np.mean(X, dtype=np.float32)
+    std = np.std(X, dtype=np.float32)
+    return ((X - mean) / (std + 1e-8)).astype(np.float32, copy=False)
 
 def scale_labels(y, y_max=None):
     """
@@ -55,8 +58,8 @@ def scale_rul_labels(y_train, y_test):
     """
     scaler_y = MinMaxScaler()
     print(f"Scaling RUL labels: train={len(y_train)}, test={len(y_test)}")
-    y_train_scaled = scaler_y.fit_transform(y_train.reshape(-1, 1)).flatten()
-    y_test_scaled = scaler_y.transform(y_test.reshape(-1, 1)).flatten()
+    y_train_scaled = scaler_y.fit_transform(y_train.reshape(-1, 1)).flatten().astype(np.float32)
+    y_test_scaled = scaler_y.transform(y_test.reshape(-1, 1)).flatten().astype(np.float32)
     return y_train_scaled, y_test_scaled, scaler_y
 
 def split_data(X, y, test_size=0.2, random_state=42):
@@ -87,19 +90,28 @@ def augment_data(X_train, y_train, num_augmentations=3):
     Returns:
         tuple: (X_augmented, y_augmented)
     """
+    X_train = X_train.astype(np.float32, copy=False)
+    y_train = y_train.astype(np.float32, copy=False)
     X_augmented = [X_train]
     y_augmented = [y_train]
     print(f"Augmenting data with {num_augmentations} noisy copies...")
 
     for augmentation_index in range(num_augmentations):
         # Add small Gaussian noise
-        noise = np.random.normal(0, np.std(X_train) * 0.05, X_train.shape)
-        X_noisy = X_train + noise
+        noise = np.random.normal(
+            0,
+            np.std(X_train, dtype=np.float32) * 0.05,
+            X_train.shape
+        ).astype(np.float32)
+        X_noisy = (X_train + noise).astype(np.float32, copy=False)
         X_augmented.append(X_noisy)
         y_augmented.append(y_train)
         print(f"Completed augmentation {augmentation_index + 1}/{num_augmentations}")
 
-    return np.concatenate(X_augmented), np.concatenate(y_augmented)
+    return (
+        np.concatenate(X_augmented, axis=0).astype(np.float32, copy=False),
+        np.concatenate(y_augmented, axis=0).astype(np.float32, copy=False)
+    )
 
 def shuffle_data(X, y, random_state=42):
     """

@@ -20,8 +20,8 @@ def load_bearing_data(data_path="../data/ims/1st_test"):
 
     for index, file in enumerate(files, start=1):
         path = os.path.join(data_path, file)
-        data = np.loadtxt(path)
-        signals.append(data[:, 4])  # Bearing 3 horizontal
+        data = np.loadtxt(path, dtype=np.float32)
+        signals.append(data[:, 4].astype(np.float32, copy=False))  # Bearing 3 horizontal
         print(f"Loaded file {index}/{total_files}: {file}")
 
     print(f"Total signals loaded: {len(signals)}")
@@ -75,8 +75,8 @@ def create_dataset(signals, window_size=2048, stride=512):
 
         print(f"Processed signal {i + 1}/{total_files}: generated {len(windows)} windows")
 
-    X = np.array(X)
-    y = np.array(y)
+    X = np.array(X, dtype=np.float32)
+    y = np.array(y, dtype=np.float32)
 
     # Add channel dimension for CNN
     X = X[..., np.newaxis]
