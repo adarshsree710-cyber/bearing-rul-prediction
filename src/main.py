@@ -7,7 +7,14 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 from data_loader import load_bearing_data, create_dataset, calculate_time_intervals
-from preprocessing import normalize_data, scale_rul_labels, split_data, augment_data, shuffle_data
+from preprocessing import (
+    normalize_data,
+    scale_rul_labels,
+    split_data,
+    augment_data,
+    shuffle_data,
+    save_preprocessing_artifacts,
+)
 from model import create_cnn_model, check_gpu_availability
 from train import train_model, analyze_overfitting
 from predict import evaluate_model, convert_predictions_to_hours, plot_predictions, print_prediction_samples
@@ -26,6 +33,8 @@ def main():
     BATCH_SIZE = 64
     NUM_AUGMENTATIONS = 1
     MODEL_SAVE_PATH = project_root / "models" / "cnn_rul_model.keras"
+    PREPROCESSING_ARTIFACTS_PATH = project_root / "models" / "preprocessing_artifacts.pkl"
+    PLOT_SAVE_PATH = project_root / "outputs" / "plots" / "predictions_vs_actual_rul_hours.png"
 
     total_steps = 12
     print(f"Pipeline started. Total steps: {total_steps}")
@@ -39,7 +48,7 @@ def main():
 
     print(f"Step 2/{total_steps} complete: dataset created")
     print("Normalizing data...")
-    X = normalize_data(X)
+    X, signal_mean, signal_std = normalize_data(X, return_stats=True)
 
     print(f"Step 3/{total_steps} complete: data normalized")
     print("Splitting data...")
@@ -111,12 +120,23 @@ def main():
     plot_predictions(y_test_hours, y_pred_hours,
                     title="Model Predictions vs Actual RUL (Hours)",
                     xlabel="Actual RUL (hours)",
-                    ylabel="Predicted RUL (hours)")
+                    ylabel="Predicted RUL (hours)",
+                    output_path=PLOT_SAVE_PATH)
 
     print(f"Saving model to {MODEL_SAVE_PATH}...")
     from predict import save_model
     MODEL_SAVE_PATH.parent.mkdir(parents=True, exist_ok=True)
     save_model(model, str(MODEL_SAVE_PATH))
+    save_preprocessing_artifacts(
+        str(PREPROCESSING_ARTIFACTS_PATH),
+        signal_mean,
+        signal_std,
+        scaler_y,
+        WINDOW_SIZE,
+        STRIDE,
+        avg_interval_hours
+    )
+    print(f"Preprocessing artifacts saved to {PREPROCESSING_ARTIFACTS_PATH}")
 
     print(f"Step 12/{total_steps} complete: model saved")
     print("Training complete!")

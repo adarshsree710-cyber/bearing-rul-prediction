@@ -1,23 +1,63 @@
+import pickle
+
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
-def normalize_data(X):
+def compute_normalization_stats(X):
     """
-    Normalize data using z-score normalization.
+    Compute normalization statistics for vibration data.
 
     Args:
         X (np.array): Input data
 
     Returns:
+        tuple: (mean, std)
+    """
+    X = X.astype(np.float32, copy=False)
+    mean = float(np.mean(X, dtype=np.float32))
+    std = float(np.std(X, dtype=np.float32))
+    return mean, std
+
+def apply_normalization(X, mean, std):
+    """
+    Normalize data using provided z-score statistics.
+
+    Args:
+        X (np.array): Input data
+        mean (float): Mean used for normalization
+        std (float): Standard deviation used for normalization
+
+    Returns:
         np.array: Normalized data
     """
-    print(f"Normalizing {len(X)} samples...")
     X = X.astype(np.float32, copy=False)
-    mean = np.mean(X, dtype=np.float32)
-    std = np.std(X, dtype=np.float32)
     return ((X - mean) / (std + 1e-8)).astype(np.float32, copy=False)
+
+def normalize_data(X, mean=None, std=None, return_stats=False):
+    """
+    Normalize data using z-score normalization.
+
+    Args:
+        X (np.array): Input data
+        mean (float | None): Optional precomputed mean
+        std (float | None): Optional precomputed std
+        return_stats (bool): Whether to return mean and std
+
+    Returns:
+        np.array | tuple: Normalized data, optionally with stats
+    """
+    print(f"Normalizing {len(X)} samples...")
+    if mean is None or std is None:
+        mean, std = compute_normalization_stats(X)
+
+    normalized = apply_normalization(X, mean, std)
+
+    if return_stats:
+        return normalized, mean, std
+
+    return normalized
 
 def scale_labels(y, y_max=None):
     """
@@ -127,3 +167,58 @@ def shuffle_data(X, y, random_state=42):
     """
     print(f"Shuffling {len(X)} samples...")
     return shuffle(X, y, random_state=random_state)
+
+def save_preprocessing_artifacts(filepath, mean, std, scaler_y, window_size, stride, avg_interval_hours):
+    """
+    Save preprocessing metadata needed for inference.
+
+    Args:
+        filepath (str): Destination file path
+        mean (float): Training normalization mean
+        std (float): Training normalization std
+        scaler_y (MinMaxScaler): Fitted label scaler
+        window_size (int): Sliding window size
+        stride (int): Sliding window stride
+        avg_interval_hours (float): Average time interval between files
+    """
+    artifacts = {
+        'signal_mean': float(mean),
+        'signal_std': float(std),
+        'window_size': int(window_size),
+        'stride': int(stride),
+        'avg_interval_hours': float(avg_interval_hours),
+        'scaler_min': scaler_y.min_.astype(np.float32),
+        'scaler_scale': scaler_y.scale_.astype(np.float32),
+        'scaler_data_min': scaler_y.data_min_.astype(np.float32),
+        'scaler_data_max': scaler_y.data_max_.astype(np.float32),
+        'scaler_data_range': scaler_y.data_range_.astype(np.float32),
+        'scaler_feature_range': scaler_y.feature_range,
+    }
+
+    with open(filepath, 'wb') as artifact_file:
+        pickle.dump(artifacts, artifact_file)
+
+def load_preprocessing_artifacts(filepath):
+    """
+    Load preprocessing metadata needed for inference.
+
+    Args:
+        filepath (str): Artifact file path
+
+    Returns:
+        dict: Loaded artifacts with a reconstructed label scaler
+    """
+    with open(filepath, 'rb') as artifact_file:
+        artifacts = pickle.load(artifact_file)
+
+    scaler_y = MinMaxScaler(feature_range=artifacts['scaler_feature_range'])
+    scaler_y.min_ = np.array(artifacts['scaler_min'], dtype=np.float32)
+    scaler_y.scale_ = np.array(artifacts['scaler_scale'], dtype=np.float32)
+    scaler_y.data_min_ = np.array(artifacts['scaler_data_min'], dtype=np.float32)
+    scaler_y.data_max_ = np.array(artifacts['scaler_data_max'], dtype=np.float32)
+    scaler_y.data_range_ = np.array(artifacts['scaler_data_range'], dtype=np.float32)
+    scaler_y.n_features_in_ = 1
+    scaler_y.n_samples_seen_ = 1
+
+    artifacts['scaler_y'] = scaler_y
+    return artifacts

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error, mean_squared_error
@@ -54,7 +56,14 @@ def convert_predictions_to_hours(y_pred, y_test, avg_interval_hours):
     y_test_hours = y_test * avg_interval_hours
     return y_pred_hours, y_test_hours
 
-def plot_predictions(y_test, y_pred, title="Model Predictions vs Actual", xlabel="Actual RUL", ylabel="Predicted RUL"):
+def plot_predictions(
+    y_test,
+    y_pred,
+    title="Model Predictions vs Actual",
+    xlabel="Actual RUL",
+    ylabel="Predicted RUL",
+    output_path=None
+):
     """
     Plot prediction scatter plot.
 
@@ -64,6 +73,7 @@ def plot_predictions(y_test, y_pred, title="Model Predictions vs Actual", xlabel
         title (str): Plot title
         xlabel (str): X-axis label
         ylabel (str): Y-axis label
+        output_path (str | Path | None): File path to save the plot image
     """
     print(f"Plotting {len(y_test)} prediction points...")
     plt.figure(figsize=(10, 6))
@@ -79,7 +89,14 @@ def plot_predictions(y_test, y_pred, title="Model Predictions vs Actual", xlabel
     plt.title(title)
     plt.legend()
     plt.grid(True, alpha=0.3)
-    plt.show()
+
+    if output_path is not None:
+        output_path = Path(output_path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        plt.savefig(output_path, bbox_inches="tight", dpi=300)
+        print(f"Plot saved to {output_path}")
+
+    plt.close()
 
 def print_prediction_samples(y_pred, y_test, num_samples=5, unit="files"):
     """
