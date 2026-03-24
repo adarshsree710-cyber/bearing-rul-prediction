@@ -23,46 +23,59 @@ def main():
     BATCH_SIZE = 64
     MODEL_SAVE_PATH = "../models/cnn_rul_model.h5"
 
+    total_steps = 12
+    print(f"Pipeline started. Total steps: {total_steps}")
     print("Loading bearing data...")
     signals, files = load_bearing_data(DATA_PATH)
 
+    print(f"Step 1/{total_steps} complete: bearing data loaded")
     print("Creating dataset...")
     X, y = create_dataset(signals, WINDOW_SIZE, STRIDE)
 
+    print(f"Step 2/{total_steps} complete: dataset created")
     print("Normalizing data...")
     X = normalize_data(X)
 
+    print(f"Step 3/{total_steps} complete: data normalized")
     print("Splitting data...")
     X_train, X_test, y_train, y_test = split_data(X, y, test_size=TEST_SIZE)
 
+    print(f"Step 4/{total_steps} complete: data split")
     print("Scaling labels...")
     y_train_scaled, y_test_scaled, scaler_y = scale_rul_labels(y_train, y_test)
     y_max = y_train.max()  # For reference
     print(f"Max RUL: {y_max}")
 
+    print(f"Step 5/{total_steps} complete: labels scaled")
     print("Shuffling training data...")
     X_train, y_train = shuffle_data(X_train, y_train)
 
+    print(f"Step 6/{total_steps} complete: training data shuffled")
     print("Augmenting training data...")
     X_train_aug, y_train_aug = augment_data(X_train, y_train, num_augmentations=2)
     print(f"Augmented dataset size: {X_train_aug.shape[0]} (from {X_train.shape[0]})")
 
+    print(f"Step 7/{total_steps} complete: training data augmented")
     print("Creating model...")
     model = create_cnn_model(input_shape=(WINDOW_SIZE, 1))
 
+    print(f"Step 8/{total_steps} complete: model created")
     print("Checking GPU availability...")
     gpus = check_gpu_availability()
     print(f"Available GPUs: {gpus}")
 
+    print(f"Step 9/{total_steps} complete: gpu check complete")
     print("Training model...")
     history = train_model(model, X_train_aug, y_train_aug, X_test, y_test, EPOCHS, BATCH_SIZE)
 
+    print(f"Step 10/{total_steps} complete: model trained")
     print("Analyzing overfitting...")
     analysis = analyze_overfitting(history)
     print(f"Final train loss: {analysis['final_train_loss']:.4f}")
     print(f"Final val loss: {analysis['final_val_loss']:.4f}")
     print(f"Loss gap: {analysis['loss_gap']:.4f}")
 
+    print(f"Step 11/{total_steps} complete: analysis complete")
     print("Evaluating model...")
     metrics = evaluate_model(model, X_test, y_test_scaled, scaler_y)
     print(f"Test MAE (original units): {metrics['mae_original']:.4f}")
@@ -87,6 +100,7 @@ def main():
     from predict import save_model
     save_model(model, MODEL_SAVE_PATH)
 
+    print(f"Step 12/{total_steps} complete: model saved")
     print("Training complete!")
 
 if __name__ == "__main__":

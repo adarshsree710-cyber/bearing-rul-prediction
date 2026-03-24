@@ -16,8 +16,10 @@ def evaluate_model(model, X_test, y_test_scaled, scaler_y):
         dict: Evaluation metrics
     """
     # Get predictions
+    print(f"Evaluating model on {len(X_test)} test samples...")
     test_loss, test_mae = model.evaluate(X_test, y_test_scaled, verbose=0)
 
+    print(f"Generating predictions for {len(X_test)} test samples...")
     y_pred_scaled = model.predict(X_test, verbose=0).flatten()
     y_pred_original = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1)).flatten()
     y_test_original = scaler_y.inverse_transform(y_test_scaled.reshape(-1, 1)).flatten()
@@ -47,6 +49,7 @@ def convert_predictions_to_hours(y_pred, y_test, avg_interval_hours):
     Returns:
         tuple: (y_pred_hours, y_test_hours)
     """
+    print(f"Converting predictions to hours using avg_interval_hours={avg_interval_hours:.4f}")
     y_pred_hours = y_pred * avg_interval_hours
     y_test_hours = y_test * avg_interval_hours
     return y_pred_hours, y_test_hours
@@ -62,6 +65,7 @@ def plot_predictions(y_test, y_pred, title="Model Predictions vs Actual", xlabel
         xlabel (str): X-axis label
         ylabel (str): Y-axis label
     """
+    print(f"Plotting {len(y_test)} prediction points...")
     plt.figure(figsize=(10, 6))
     plt.scatter(y_test, y_pred, alpha=0.5, s=20)
 
@@ -100,5 +104,6 @@ def save_model(model, filepath):
         model: Keras model
         filepath (str): Path to save model
     """
+    print(f"Saving model to {filepath}...")
     model.save(filepath)
     print(f"Model saved to {filepath}")

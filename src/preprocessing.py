@@ -13,6 +13,7 @@ def normalize_data(X):
     Returns:
         np.array: Normalized data
     """
+    print(f"Normalizing {len(X)} samples...")
     return (X - np.mean(X)) / np.std(X)
 
 def scale_labels(y, y_max=None):
@@ -53,6 +54,7 @@ def scale_rul_labels(y_train, y_test):
         tuple: (y_train_scaled, y_test_scaled, scaler)
     """
     scaler_y = MinMaxScaler()
+    print(f"Scaling RUL labels: train={len(y_train)}, test={len(y_test)}")
     y_train_scaled = scaler_y.fit_transform(y_train.reshape(-1, 1)).flatten()
     y_test_scaled = scaler_y.transform(y_test.reshape(-1, 1)).flatten()
     return y_train_scaled, y_test_scaled, scaler_y
@@ -70,6 +72,7 @@ def split_data(X, y, test_size=0.2, random_state=42):
     Returns:
         tuple: (X_train, X_test, y_train, y_test)
     """
+    print(f"Splitting data: samples={len(X)}, test_size={test_size}")
     return train_test_split(X, y, test_size=test_size, random_state=random_state, shuffle=True)
 
 def augment_data(X_train, y_train, num_augmentations=3):
@@ -86,13 +89,15 @@ def augment_data(X_train, y_train, num_augmentations=3):
     """
     X_augmented = [X_train]
     y_augmented = [y_train]
+    print(f"Augmenting data with {num_augmentations} noisy copies...")
 
-    for _ in range(num_augmentations):
+    for augmentation_index in range(num_augmentations):
         # Add small Gaussian noise
         noise = np.random.normal(0, np.std(X_train) * 0.05, X_train.shape)
         X_noisy = X_train + noise
         X_augmented.append(X_noisy)
         y_augmented.append(y_train)
+        print(f"Completed augmentation {augmentation_index + 1}/{num_augmentations}")
 
     return np.concatenate(X_augmented), np.concatenate(y_augmented)
 
@@ -108,4 +113,5 @@ def shuffle_data(X, y, random_state=42):
     Returns:
         tuple: (X_shuffled, y_shuffled)
     """
+    print(f"Shuffling {len(X)} samples...")
     return shuffle(X, y, random_state=random_state)

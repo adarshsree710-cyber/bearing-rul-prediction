@@ -1,4 +1,30 @@
-from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
+from tensorflow.keras.callbacks import Callback, EarlyStopping, ReduceLROnPlateau
+
+
+class TrainingOutputCallback(Callback):
+    """
+    Print epoch-level training output directly to the terminal.
+    """
+
+    def __init__(self, total_epochs):
+        super().__init__()
+        self.total_epochs = total_epochs
+
+    def on_train_begin(self, logs=None):
+        print(f"Training started for {self.total_epochs} epochs.")
+
+    def on_epoch_end(self, epoch, logs=None):
+        logs = logs or {}
+        print(
+            f"Epoch {epoch + 1}/{self.total_epochs} - "
+            f"loss: {logs.get('loss', 0.0):.4f}, "
+            f"mae: {logs.get('mae', 0.0):.4f}, "
+            f"val_loss: {logs.get('val_loss', 0.0):.4f}, "
+            f"val_mae: {logs.get('val_mae', 0.0):.4f}"
+        )
+
+    def on_train_end(self, logs=None):
+        print("Training finished.")
 
 def create_callbacks():
     """
@@ -41,7 +67,12 @@ def train_model(model, X_train, y_train, X_test, y_test, epochs=50, batch_size=6
     Returns:
         History: Training history
     """
+    print(
+        f"Preparing training: train_samples={len(X_train)}, "
+        f"val_samples={len(X_test)}, epochs={epochs}, batch_size={batch_size}"
+    )
     callbacks = create_callbacks()
+    callbacks.append(TrainingOutputCallback(epochs))
 
     history = model.fit(
         X_train, y_train,
@@ -49,7 +80,7 @@ def train_model(model, X_train, y_train, X_test, y_test, epochs=50, batch_size=6
         batch_size=batch_size,
         validation_data=(X_test, y_test),
         callbacks=callbacks,
-        verbose=1
+        verbose=0
     )
 
     return history
@@ -78,5 +109,10 @@ def analyze_overfitting(history):
         'max_loss_gap': max(loss_gap),
         'total_epochs': len(train_loss)
     }
+    print(
+        f"Overfitting analysis complete: epochs={analysis['total_epochs']}, "
+        f"final_train_loss={analysis['final_train_loss']:.4f}, "
+        f"final_val_loss={analysis['final_val_loss']:.4f}"
+    )
 
     return analysis

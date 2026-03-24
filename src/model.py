@@ -14,6 +14,7 @@ def create_cnn_model(input_shape=(2048, 1)):
     Returns:
         Sequential: Compiled CNN model
     """
+    print(f"Creating CNN model with input_shape={input_shape}...")
     model = Sequential([
         # Reduced model complexity with stronger regularization
         Conv1D(32, kernel_size=5, activation='relu', input_shape=input_shape),
@@ -49,4 +50,6 @@ def check_gpu_availability():
     Returns:
         list: List of available GPU devices
     """
-    return tf.config.list_physical_devices('GPU')
+    gpus = tf.config.list_physical_devices('GPU')
+    print(f"GPU check complete. Found {len(gpus)} GPU(s).")
+    return gpus

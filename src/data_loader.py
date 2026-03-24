@@ -14,11 +14,15 @@ def load_bearing_data(data_path="../data/ims/1st_test"):
     """
     files = sorted(os.listdir(data_path))
     signals = []
+    total_files = len(files)
 
-    for file in files:
+    print(f"Loading bearing files from {data_path} (0/{total_files})")
+
+    for index, file in enumerate(files, start=1):
         path = os.path.join(data_path, file)
         data = np.loadtxt(path)
         signals.append(data[:, 4])  # Bearing 3 horizontal
+        print(f"Loaded file {index}/{total_files}: {file}")
 
     print(f"Total signals loaded: {len(signals)}")
     return signals, files
@@ -59,6 +63,7 @@ def create_dataset(signals, window_size=2048, stride=512):
     y = []
 
     total_files = len(signals)
+    print(f"Creating dataset from {total_files} signals...")
 
     for i, signal in enumerate(signals):
         windows = create_windows(signal, window_size, stride)
@@ -67,6 +72,8 @@ def create_dataset(signals, window_size=2048, stride=512):
         for w in windows:
             X.append(w)
             y.append(rul)
+
+        print(f"Processed signal {i + 1}/{total_files}: generated {len(windows)} windows")
 
     X = np.array(X)
     y = np.array(y)
@@ -103,6 +110,7 @@ def calculate_time_intervals(files):
         float: Average interval in hours
     """
     timestamps = []
+    print(f"Calculating time intervals from {len(files)} files...")
     for file in files:
         ts = parse_timestamp(file)
         if ts:
@@ -112,6 +120,8 @@ def calculate_time_intervals(files):
         time_diffs = [(timestamps[i+1] - timestamps[i]).total_seconds() for i in range(len(timestamps)-1)]
         avg_interval_seconds = np.mean(time_diffs)
         avg_interval_hours = avg_interval_seconds / 3600
+        print(f"Average interval between files: {avg_interval_hours:.4f} hours")
         return avg_interval_hours
     else:
+        print("Not enough timestamps found. Using default 5-minute interval.")
         return 5/60  # Default 5 minutes
