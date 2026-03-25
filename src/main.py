@@ -106,6 +106,9 @@ def main():
     metrics = evaluate_model(model, X_test, y_test_scaled, scaler_y)
     print(f"Test MAE (original units): {metrics['mae_original']:.4f}")
     print(f"Test RMSE (original units): {metrics['rmse_original']:.4f}")
+    print(f"Test RUL range: {metrics['rul_range']:.4f}")
+    print(f"Normalized MAE: {metrics['normalized_mae_percent']:.2f}% of test RUL range")
+    print(f"Normalized RMSE: {metrics['normalized_rmse_percent']:.2f}% of test RUL range")
     print(
         f"Classification threshold (RUL <= {metrics['classification_threshold']})"
         " is treated as failure-soon"

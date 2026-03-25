@@ -39,6 +39,13 @@ def evaluate_model(model, X_test, y_test_scaled, scaler_y, classification_thresh
     # Calculate metrics
     mae = mean_absolute_error(y_test_original, y_pred_original)
     rmse = np.sqrt(mean_squared_error(y_test_original, y_pred_original))
+    rul_range = float(np.max(y_test_original) - np.min(y_test_original))
+    if rul_range > 0:
+        normalized_mae_percent = (mae / rul_range) * 100.0
+        normalized_rmse_percent = (rmse / rul_range) * 100.0
+    else:
+        normalized_mae_percent = 0.0
+        normalized_rmse_percent = 0.0
     y_true_class = (y_test_original <= classification_threshold).astype(int)
     y_pred_class = (y_pred_original <= classification_threshold).astype(int)
 
@@ -52,6 +59,9 @@ def evaluate_model(model, X_test, y_test_scaled, scaler_y, classification_thresh
         'test_mae_scaled': test_mae,
         'mae_original': mae,
         'rmse_original': rmse,
+        'rul_range': rul_range,
+        'normalized_mae_percent': normalized_mae_percent,
+        'normalized_rmse_percent': normalized_rmse_percent,
         'classification_threshold': classification_threshold,
         'accuracy': accuracy,
         'precision': precision,
