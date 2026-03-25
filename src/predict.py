@@ -2,9 +2,16 @@ from pathlib import Path
 
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    mean_absolute_error,
+    mean_squared_error,
+    precision_score,
+    recall_score,
+)
 
-def evaluate_model(model, X_test, y_test_scaled, scaler_y):
+def evaluate_model(model, X_test, y_test_scaled, scaler_y, classification_threshold=10):
     """
     Evaluate model performance.
 
@@ -13,6 +20,9 @@ def evaluate_model(model, X_test, y_test_scaled, scaler_y):
         X_test (np.array): Test features
         y_test_scaled (np.array): Scaled test labels
         scaler_y: Scaler for inverse transformation
+        classification_threshold (float): RUL threshold used to convert
+            regression outputs into binary classes for accuracy, precision,
+            recall, and F1 evaluation
 
     Returns:
         dict: Evaluation metrics
@@ -29,14 +39,30 @@ def evaluate_model(model, X_test, y_test_scaled, scaler_y):
     # Calculate metrics
     mae = mean_absolute_error(y_test_original, y_pred_original)
     rmse = np.sqrt(mean_squared_error(y_test_original, y_pred_original))
+    y_true_class = (y_test_original <= classification_threshold).astype(int)
+    y_pred_class = (y_pred_original <= classification_threshold).astype(int)
+
+    accuracy = accuracy_score(y_true_class, y_pred_class)
+    precision = precision_score(y_true_class, y_pred_class, zero_division=0)
+    recall = recall_score(y_true_class, y_pred_class, zero_division=0)
+    f1 = f1_score(y_true_class, y_pred_class, zero_division=0)
 
     return {
         'test_loss': test_loss,
         'test_mae_scaled': test_mae,
         'mae_original': mae,
         'rmse_original': rmse,
+        'classification_threshold': classification_threshold,
+        'accuracy': accuracy,
+        'precision': precision,
+        'recall': recall,
+        'f1_score': f1,
+        'true_positive_samples': int(np.sum(y_true_class)),
+        'predicted_positive_samples': int(np.sum(y_pred_class)),
         'y_pred_original': y_pred_original,
-        'y_test_original': y_test_original
+        'y_test_original': y_test_original,
+        'y_true_class': y_true_class,
+        'y_pred_class': y_pred_class,
     }
 
 def convert_predictions_to_hours(y_pred, y_test, avg_interval_hours):

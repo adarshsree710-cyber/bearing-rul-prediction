@@ -141,6 +141,21 @@ This command:
 
 If `models/preprocessing_artifacts.pkl` is missing, `infer.py` will try to rebuild it automatically from `data/ims/1st_test`.
 
+### Evaluate a Saved Model Without Retraining
+
+To re-check metrics on the saved model without running training again:
+
+```bash
+python .\src\eval.py
+```
+
+This command:
+- loads the saved model from `models/cnn_rul_model.keras`
+- loads or rebuilds preprocessing artifacts
+- recreates the dataset and the same 80/20 split
+- prints `MAE`, `RMSE`, binary accuracy, precision, recall, and F1
+- prints a few sample predictions in hours
+
 ## Notes
 
 - The model predicts one RUL value per window, so `infer.py` reports aggregated file-level values.

@@ -106,6 +106,16 @@ def main():
     metrics = evaluate_model(model, X_test, y_test_scaled, scaler_y)
     print(f"Test MAE (original units): {metrics['mae_original']:.4f}")
     print(f"Test RMSE (original units): {metrics['rmse_original']:.4f}")
+    print(
+        f"Classification threshold (RUL <= {metrics['classification_threshold']})"
+        " is treated as failure-soon"
+    )
+    print(f"Binary accuracy: {metrics['accuracy']:.4f}")
+    print(f"Precision: {metrics['precision']:.4f}")
+    print(f"Recall: {metrics['recall']:.4f}")
+    print(f"F1 Score: {metrics['f1_score']:.4f}")
+    print(f"Actual failure-soon samples: {metrics['true_positive_samples']}")
+    print(f"Predicted failure-soon samples: {metrics['predicted_positive_samples']}")
 
     print("Converting predictions to hours...")
     avg_interval_hours = calculate_time_intervals(files)
