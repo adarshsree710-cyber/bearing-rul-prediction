@@ -106,8 +106,8 @@ def rebuild_preprocessing_artifacts(artifacts_path, data_path, window_size=2048,
     print(f"Preprocessing artifacts not found. Rebuilding them from dataset: {data_path}")
     signals, files = load_bearing_data(str(data_path))
     X, y = create_dataset(signals, window_size, stride)
-    _, signal_mean, signal_std = normalize_data(X, return_stats=True)
-    _, _, y_train, y_test = split_data(X, y, test_size=test_size)
+    X_train, _, y_train, y_test = split_data(X, y, test_size=test_size)
+    _, signal_mean, signal_std = normalize_data(X_train, return_stats=True)
     _, _, scaler_y = scale_rul_labels(y_train, y_test)
     avg_interval_hours = calculate_time_intervals(files)
 

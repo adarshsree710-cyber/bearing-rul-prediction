@@ -47,14 +47,15 @@ def main():
     X, y = create_dataset(signals, WINDOW_SIZE, STRIDE)
 
     print(f"Step 2/{total_steps} complete: dataset created")
-    print("Normalizing data...")
-    X, signal_mean, signal_std = normalize_data(X, return_stats=True)
-
-    print(f"Step 3/{total_steps} complete: data normalized")
     print("Splitting data...")
     X_train, X_test, y_train, y_test = split_data(X, y, test_size=TEST_SIZE)
 
-    print(f"Step 4/{total_steps} complete: data split")
+    print(f"Step 3/{total_steps} complete: data split")
+    print("Normalizing data...")
+    X_train, signal_mean, signal_std = normalize_data(X_train, return_stats=True)
+    X_test = normalize_data(X_test, mean=signal_mean, std=signal_std)
+
+    print(f"Step 4/{total_steps} complete: data normalized")
     print("Scaling labels...")
     y_train_scaled, y_test_scaled, scaler_y = scale_rul_labels(y_train, y_test)
     y_max = y_train.max()  # For reference
