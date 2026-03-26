@@ -2,11 +2,20 @@
 Main script for Bearing RUL Prediction using CNN
 """
 
-import numpy as np
-import matplotlib.pyplot as plt
 from pathlib import Path
+import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+CURRENT_DIR = Path(__file__).resolve().parent
+if str(CURRENT_DIR) not in sys.path:
+    # Keep local module imports working when the script is launched directly.
+    sys.path.insert(0, str(CURRENT_DIR))
 
 from data_loader import load_bearing_data, create_dataset, calculate_time_intervals
+from model import create_cnn_model, check_gpu_availability
+from predict import evaluate_model, convert_predictions_to_hours, plot_predictions, print_prediction_samples
 from preprocessing import (
     normalize_data,
     scale_rul_labels,
@@ -15,9 +24,7 @@ from preprocessing import (
     shuffle_data,
     save_preprocessing_artifacts,
 )
-from model import create_cnn_model, check_gpu_availability
 from train import train_model, analyze_overfitting
-from predict import evaluate_model, convert_predictions_to_hours, plot_predictions, print_prediction_samples
 
 def main():
     """Main training and evaluation pipeline"""
