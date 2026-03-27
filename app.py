@@ -35,6 +35,21 @@ def load_artifacts():
     return load_preprocessing_artifacts(ARTIFACT_PATH)
 
 
+def determine_health_status(summary, kurtosis, crest_factor):
+    mean_rul = summary["mean_hours"]
+    min_rul = summary["min_hours"]
+    max_rul = summary["max_hours"]
+    rul_spread = max_rul - min_rul
+
+    if min_rul <= 20 or kurtosis >= 8 or crest_factor >= 7:
+        return "error", "Failure Soon"
+
+    if mean_rul <= 50 or min_rul <= 50 or kurtosis >= 6 or crest_factor >= 5 or rul_spread >= 120:
+        return "warning", "Maintenance Recommended"
+
+    return "success", "Healthy"
+
+
 model = load_model_cached()
 artifacts = load_artifacts()
 
@@ -47,9 +62,7 @@ if uploaded_file is not None:
 
     signal = load_signal(tmp_path)
 
-    # Raw waveform
     st.subheader("Raw Vibration Waveform")
-
     fig, ax = plt.subplots(figsize=(8, 3.5))
     ax.plot(signal)
     ax.set_xlabel("Sample")
@@ -64,43 +77,53 @@ if uploaded_file is not None:
         artifacts["signal_std"],
     )
 
-    # Sliding windows
     st.subheader("Sliding Windows used by CNN")
-
     fig2, ax2 = plt.subplots(figsize=(8, 3.5))
     for i in range(min(5, len(X))):
         ax2.plot(X[i].flatten(), alpha=0.7)
     st.pyplot(fig2)
 
-    # CNN prediction
     predictions_scaled = model.predict(X, verbose=0).flatten()
     predictions = artifacts["scaler_y"].inverse_transform(predictions_scaled.reshape(-1, 1)).flatten()
 
-    # Prediction distribution
-    st.subheader("Prediction Distribution")
+    st.subheader("Signal Health Indicators")
+    rms = np.sqrt(np.mean(signal**2))
+    peak = np.max(np.abs(signal))
+    kurtosis = np.mean((signal - np.mean(signal)) ** 4) / (np.std(signal) ** 4)
+    crest_factor = peak / rms
 
-    fig3, ax3 = plt.subplots(figsize=(7, 3.5))
-    ax3.hist(predictions, bins=30)
-    st.pyplot(fig3)
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric(label="RMS Vibration", value=f"{rms:.4f}")
+    col2.metric(label="Peak Amplitude", value=f"{peak:.4f}")
+    col3.metric(label="Kurtosis", value=f"{kurtosis:.2f}")
+    col4.metric(label="Crest Factor", value=f"{crest_factor:.2f}")
 
-    # Aggregate results
+   # Basic interpretation
+    if crest_factor > 7 or kurtosis > 6:
+        st.error("⚠️ High impulsive vibration detected — possible bearing fault")
+    elif crest_factor > 5:
+        st.warning("⚠️ Elevated vibration shocks — maintenance recommended")
+    else:
+        st.success("✓ Vibration levels appear normal")
+    st.markdown(
+        """
+**Indicator Meaning**
+
+- **RMS Vibration** -> overall vibration energy of the bearing
+- **Peak Amplitude** -> maximum shock or impact detected
+- **Kurtosis** -> impulsiveness of vibration (high values may indicate faults)
+- **Crest Factor** -> ratio of peak vibration to RMS vibration
+"""
+    )
+
     summary = summarize_predictions(predictions, artifacts["avg_interval_hours"])
 
     st.subheader("RUL Prediction Range")
-
     col1, col2, col3 = st.columns(3)
     col1.metric("Mean RUL (hours)", f"{summary['mean_hours']:.2f}")
     col2.metric("Min RUL (hours)", f"{summary['min_hours']:.2f}")
     col3.metric("Max RUL (hours)", f"{summary['max_hours']:.2f}")
 
-    # Machine health status
     st.subheader("Machine Health Status")
-
-    mean_rul = summary["mean_hours"]
-
-    if mean_rul > 50:
-        st.success("Healthy")
-    elif mean_rul > 20:
-        st.warning("Maintenance Recommended")
-    else:
-        st.error("Failure Soon")
+    health_level, health_label = determine_health_status(summary, kurtosis, crest_factor)
+    getattr(st, health_level)(health_label)
