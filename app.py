@@ -36,15 +36,14 @@ def load_artifacts():
 
 
 def determine_health_status(summary, kurtosis, crest_factor):
-    mean_rul = summary["mean_hours"]
-    min_rul = summary["min_hours"]
-    max_rul = summary["max_hours"]
-    rul_spread = max_rul - min_rul
+    median_rul = summary["median_hours"]
+    lower_rul = summary["lower_hours"]
+    std_rul = summary["std_hours"]
 
-    if min_rul <= 20 or kurtosis >= 8 or crest_factor >= 7:
+    if lower_rul <= 20 or kurtosis >= 8 or crest_factor >= 7:
         return "error", "Failure Soon"
 
-    if mean_rul <= 50 or min_rul <= 50 or kurtosis >= 6 or crest_factor >= 5 or rul_spread >= 120:
+    if median_rul <= 50 or lower_rul <= 50 or kurtosis >= 6 or crest_factor >= 5 or std_rul >= 60:
         return "warning", "Maintenance Recommended"
 
     return "success", "Healthy"
@@ -104,7 +103,7 @@ if uploaded_file is not None:
     elif crest_factor > 5:
         st.warning("⚠️ Elevated vibration shocks — maintenance recommended")
     else:
-        st.success("✓ Vibration levels appear normal")
+        st.success("✓  Vibration levels appear normal")
     st.markdown(
         """
 **Indicator Meaning**
@@ -120,9 +119,9 @@ if uploaded_file is not None:
 
     st.subheader("RUL Prediction Range")
     col1, col2, col3 = st.columns(3)
-    col1.metric("Mean RUL (hours)", f"{summary['mean_hours']:.2f}")
-    col2.metric("Min RUL (hours)", f"{summary['min_hours']:.2f}")
-    col3.metric("Max RUL (hours)", f"{summary['max_hours']:.2f}")
+    col1.metric("Predicted RUL (hours)", f"{summary['median_hours']:.2f}")
+    col2.metric("Lower Bound (hours)", f"{summary['lower_hours']:.2f}")
+    col3.metric("Upper Bound (hours)", f"{summary['upper_hours']:.2f}")
 
     st.subheader("Machine Health Status")
     health_level, health_label = determine_health_status(summary, kurtosis, crest_factor)

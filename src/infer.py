@@ -72,20 +72,26 @@ def summarize_predictions(predictions_files, avg_interval_hours):
     Returns:
         dict: Summary statistics
     """
-    mean_files = float(np.mean(predictions_files))
-    median_files = float(np.median(predictions_files))
-    min_files = float(np.min(predictions_files))
-    max_files = float(np.max(predictions_files))
+    lower_pct = np.percentile(predictions_files, 10)
+    upper_pct = np.percentile(predictions_files, 90)
+    trimmed = predictions_files[
+        (predictions_files >= lower_pct) & (predictions_files <= upper_pct)
+    ]
+
+    median_files = float(np.median(trimmed))
+    std_files = float(np.std(trimmed))
+    lower_files = max(0.0, median_files - 2 * std_files)
+    upper_files = median_files + 2 * std_files
 
     return {
-        'mean_files': mean_files,
         'median_files': median_files,
-        'min_files': min_files,
-        'max_files': max_files,
-        'mean_hours': mean_files * avg_interval_hours,
+        'std_files': std_files,
+        'lower_files': lower_files,
+        'upper_files': upper_files,
         'median_hours': median_files * avg_interval_hours,
-        'min_hours': min_files * avg_interval_hours,
-        'max_hours': max_files * avg_interval_hours,
+        'std_hours': std_files * avg_interval_hours,
+        'lower_hours': lower_files * avg_interval_hours,
+        'upper_hours': upper_files * avg_interval_hours,
     }
 
 
@@ -201,10 +207,10 @@ def main():
     print("The model predicts one RUL value per window, so the file-level result is aggregated below.")
     print(f"Input file: {input_file}")
     print(f"Window count: {len(y_pred_files)}")
-    print(f"Mean predicted RUL: {summary['mean_files']:.2f} files ({summary['mean_hours']:.2f} hours)")
-    print(f"Median predicted RUL: {summary['median_files']:.2f} files ({summary['median_hours']:.2f} hours)")
-    print(f"Prediction range: {summary['min_files']:.2f} to {summary['max_files']:.2f} files")
-    print(f"Prediction range: {summary['min_hours']:.2f} to {summary['max_hours']:.2f} hours")
+    print(f"Predicted RUL (median): {summary['median_files']:.2f} files ({summary['median_hours']:.2f} hours)")
+    print(f"95% confidence interval: {summary['lower_files']:.2f} to {summary['upper_files']:.2f} files")
+    print(f"                         {summary['lower_hours']:.2f} to {summary['upper_hours']:.2f} hours")
+    print(f"Std deviation: {summary['std_files']:.3f} files ({summary['std_hours']:.2f} hours)")
     print("=" * 36)
 
 
