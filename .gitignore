@@ -1,4 +1,5 @@
 /data
+/notebooks
 /venv
 __pycache__/
 *.py[cod]
